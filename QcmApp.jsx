@@ -1,0 +1,1 @@
+/* React code placeholder - the full component should be pasted here */
