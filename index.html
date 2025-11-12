@@ -1,15 +1,136 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>QCM Anatomie</title>
+<style>
+body{font-family:system-ui,Arial;margin:16px;background:#0f172a;color:#e6eef8}
+.container{max-width:900px;margin:0 auto;background:#071033;padding:18px;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+h1{color:#fff}
+.card{background:#0b1220;padding:12px;border-radius:6px;margin:10px 0;border:1px solid rgba(255,255,255,0.04)}
+.choice{display:block;padding:8px;margin:6px 0;border-radius:6px;border:1px solid rgba(255,255,255,0.04);cursor:pointer;text-align:left}
+.choice.correct{background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.4);color:#9ef3c7}
+.choice.wrong{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.3);color:#ffc7c7;}
+.footer{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:12px}
+.btn{padding:8px 12px;border-radius:6px;border:none;cursor:pointer}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-ghost{background:transparent;color:#cbd5e1;border:1px solid rgba(255,255,255,0.03)}
+small{color:#9fb0d4}
+code{background:#07203a;padding:2px 6px;border-radius:4px}
+</style>
 </head>
 <body>
-<h2>QCM Anatomie</h2>
-<div id="quiz"></div>
-<button onclick="checkAnswers()">Vérifier</button>
-<p id="result"></p>
-<script src="quiz.js"></script>
+<div class="container">
+  <h1>QCM Anatomie — Version interactive</h1>
+  <p class="card"><small>Correction immédiate : clique une réponse pour voir si elle est bonne. Utilise le sélecteur de chapitre pour charger tes questions (questions.json).</small></p>
+  <div class="card">
+    <label for="chapter">Chapitre :</label>
+    <select id="chapter" onchange="loadChapter()"></select>
+  </div>
+  <div id="questionArea"></div>
+  <div class="footer card">
+    <div>
+      <strong id="score">Score: 0 / 0</strong><br><small id="progress">Question 0 / 0</small>
+    </div>
+    <div>
+      <button class="btn btn-ghost" onclick="prevQ()">Précédent</button>
+      <button class="btn btn-primary" onclick="nextQ()">Suivant</button>
+      <button class="btn btn-ghost" onclick="shuffleMode()">Mode Examen</button>
+      <button class="btn btn-ghost" onclick="exportQuestions()">Exporter JSON</button>
+    </div>
+  </div>
+  <p style="margin-top:12px;color:#93c5fd"><small>Pour ajouter des questions, édite <code>questions.json</code> dans le dossier racine du site (format indiqué dans README.txt).</small></p>
+</div>
+
+<script>
+let data = {};
+let currentChapter = null;
+let currentIndex = 0;
+let score=0;
+let attempts=0;
+let examMode=false;
+let order=[];
+
+function loadJSON(path, cb){
+  fetch(path).then(r=>r.json()).then(cb).catch(e=>{alert("Impossible de charger questions.json : vérifie que le fichier est présent.");});
+}
+
+function populateChapterSelect(){
+  const sel=document.getElementById('chapter');
+  sel.innerHTML='';
+  Object.keys(data).forEach(ch => {
+    const opt=document.createElement('option');
+    opt.value=ch; opt.textContent=ch + ' ('+data[ch].length+' Q)';
+    sel.appendChild(opt);
+  });
+  if(Object.keys(data).length>0){
+    currentChapter=Object.keys(data)[0];
+    sel.value=currentChapter;
+    startChapter(currentChapter);
+  }
+}
+
+function loadChapter(){ currentChapter = document.getElementById('chapter').value; startChapter(currentChapter); }
+
+function startChapter(ch){
+  currentIndex=0; score=0; attempts=0; order = Array.from(Array(data[ch].length).keys());
+  updateProgress();
+  renderQuestion();
+  updateScore();
+}
+
+function renderQuestion(){
+  const area = document.getElementById('questionArea');
+  if(!currentChapter){ area.innerHTML='<div class="card">Aucun chapitre trouvé.</div>'; return; }
+  const q = data[currentChapter][order[currentIndex]];
+  let html = `<div class="card"><h3>Q${currentIndex+1} : ${q.text}</h3>`;
+  q.choices.forEach((c,i)=>{
+    html += `<button class="choice" onclick="choose(${i})" id="choice-${i}">${c}</button>`;
+  });
+  html += `<p style="margin-top:8px;"><small>${q.explanation? q.explanation : ''}</small></p></div>`;
+  area.innerHTML = html;
+  updateProgress();
+}
+
+function choose(i){
+  const q = data[currentChapter][order[currentIndex]];
+  const correct = q.correct.map(Number);
+  attempts++;
+  // mark all choices
+  q.choices.forEach((c, idx) => {
+    const el = document.getElementById('choice-'+idx);
+    if(correct.includes(idx)){
+      el.classList.add('correct');
+    }
+    if(idx===i && !correct.includes(idx)){
+      el.classList.add('wrong');
+    }
+    el.disabled = true;
+  });
+  // check if user correct
+  const isUserCorrect = correct.length===1 ? (correct[0]===i) : correct.every(x=> false);
+  if(isUserCorrect) score++;
+  updateScore();
+}
+
+function updateScore(){ document.getElementById('score').textContent = `Score: ${score} / ${attempts}`; }
+
+function updateProgress(){ document.getElementById('progress').textContent = `Question ${currentIndex+1} / ${data[currentChapter].length}`; }
+
+function nextQ(){ if(currentIndex < data[currentChapter].length-1){ currentIndex++; renderQuestion(); } }
+
+function prevQ(){ if(currentIndex>0){ currentIndex--; renderQuestion(); } }
+
+function shuffleMode(){ examMode = !examMode; if(examMode){ order = order.sort(()=>Math.random()-0.5); alert('Mode examen activé (ordre aléatoire)'); } else { startChapter(currentChapter); } }
+
+function exportQuestions(){
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='questions-export.json'; a.click();
+}
+
+loadJSON('questions.json', (d)=>{ data=d; populateChapterSelect(); });
+</script>
 </body>
 </html>
