@@ -1,0 +1,62 @@
+{
+  "Généralités anatomie": [
+    {
+      "text": "Combien d’os possède en moyenne un adulte ?",
+      "choices": [
+        "180",
+        "206",
+        "240",
+        "270"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": ""
+    },
+    {
+      "text": "Le cartilage hyalin se trouve sur :",
+      "choices": [
+        "les surfaces articulaires",
+        "dans l'oreille",
+        "dans la trachée",
+        "dans les ménisques"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": ""
+    }
+  ],
+  "Os coxal": [
+    {
+      "text": "Quels os forment l'hémi os coxal ?",
+      "choices": [
+        "Ilion",
+        "Ischion",
+        "Pubis",
+        "Sacrum"
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "explanation": ""
+    }
+  ],
+  "Fémur": [
+    {
+      "text": "L'angle col-diaphyse du fémur est d'environ :",
+      "choices": [
+        "105°",
+        "115°",
+        "125°",
+        "135°"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": ""
+    }
+  ]
+}
